@@ -1,0 +1,110 @@
+## HSBC Google API Proxy
+#
+
+## ACL definitions
+acl  	wdc   			src  		10.71.200.0/22 # HSBC Wakefield Datacentre
+acl  	sy  			src 		10.70.200.0/22  # HSBC South Yorkshire Datacentre
+acl  	to_metadata  		dst 		169.254.169.254 # GCP metadata
+acl  	hkl104403  		src 		130.49.105.150/32 # Cass Server
+acl  	gbl18835		src 		128.162.42.137/32 # DRN Proxy
+acl     gcpfoundation-6320774   src     	"{{ app_config_dir }}/gcpfoundation-6320774-servers.conf"
+acl	liquidity-7491774	src		"{{ app_config_dir }}/liquidity-7491774-servers.conf"
+acl     sourcedata-6320774      src     	"{{ app_config_dir }}/sourcedata-6320774-servers.conf"
+acl  	SSL_ports 		port 		443
+acl  	Safe_ports 		port 		80  # http
+acl  	Safe_ports 		port 		443  # https
+acl  	Safe_ports 		port 		1025-65535 # unregistered ports
+acl  	CONNECT 		method 		CONNECT
+acl  	googledomains 		dstdomain 	"{{ app_config_dir }}/googledomains.conf"
+acl  	googleips 		dst 		"{{ app_config_dir }}/googleips.conf"
+acl  	internet 		dst  		all
+acl  	sy-google  		all-of		sy googledomains
+acl  	wdc-google 		all-of		wdc googledomains
+acl	dstgoogle		any-of 		googleips googledomains
+acl 	has-xff 		req_header 	X-Forwarded-For ^(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|(\[([0-9a-f]+)?:([0-9a-f:]+)?:([0-9a-f]+|0-9\.]+)?\])) # requests that have X-Forwarded-For header with a value
+
+#
+## Acess Permissions
+#
+## Deny requests to certain unsafe ports
+http_access deny !Safe_ports
+
+## Deny CONNECT to other than secure SSL ports
+http_access deny CONNECT !SSL_ports
+
+## Only allow cachemgr access from localhost
+http_access allow localhost manager
+http_access deny manager
+
+## We strongly recommend the following be uncommented to protect innocent
+## web applications running on the proxy server who think the only
+## one who can access services on "localhost" is a local user
+##http_access deny to_localhost
+
+## HSBC permission list
+http_access 		allow 	sy 			dstgoogle
+http_access 		allow 	wdc 			dstgoogle
+http_access 		allow 	gcpfoundation-6320774	dstgoogle
+http_access 		allow 	liquidity-7491774 	dstgoogle
+http_access 		allow 	sourcedata-6320774 	dstgoogle
+http_access 		allow 	hkl104403 		dstgoogle
+http_access 		allow 	gbl18835 		dstgoogle
+http_access 		deny 	to_metadata
+
+## proxy-to-proxy access control
+#proxy_protocol_access   allow   gbl18835                dstgoogle
+follow_x_forwarded_for  allow   gbl18835                dstgoogle
+
+## And finally, explicitly deny all other access to this proxy
+http_access deny all
+
+## Configuration for reverse proxying
+## define backend server(s) to connect to
+#cache_peer      /etc/squid/googledomains.conf          parent    80       0  default originserver proxy-only name=googleapipeer
+## Access control for DRN proxy to connect to these server(s)
+#cache_peer_access       googleapipeer   allow   gbl18835
+
+
+## Normally Squid port
+http_port 3128
+## Same but also insist there being downstream proxy headers like X-Forwarded-For
+#http_port 3128 require-proxy-header
+
+#
+## LOGGING
+#
+
+## default logformat
+logformat squid      %ts.%03tu %6tr %>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
+
+## default logformat using XFF instead of client IP address
+logformat squid-xff  %ts.%03tu %6tr %{X-Forwarded-For}>h %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
+
+## If no XFF header, use default format
+access_log stdio:/var/log/squid3/access.log squid !has-xff
+## If XFF use XFF format
+access_log stdio:/var/log/squid3/access.log squid-xff has-xff
+
+## Debug ACLs
+#debug_options 28,3 11,3 23,3 55,3 73,3
+
+## don't cache
+cache deny all
+
+## Make squid invisible
+#via off
+#forwarded_for transparent
+
+## Add a disk cache directory.
+#cache_dir ufs /var/spool/squid 100 16 256
+
+## Coredumps in the first cache dir
+coredump_dir /var/spool/squid
+
+#
+## Add any of your own refresh_pattern entries above these.
+#
+refresh_pattern ^ftp:		1440	20%	10080
+refresh_pattern ^gopher:	1440	0%	1440
+refresh_pattern -i (/cgi-bin/|\?) 0	0%	0
+refresh_pattern .		0	20%	4320
