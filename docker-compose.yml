@@ -1,0 +1,15 @@
+# services is a version 2 only feature
+version: '2'
+
+services:
+  server:
+    image: "mesoform/concierge-squid-gcp-proxy:0.1.0"
+    domainname: "squid-gcp-proxy.gcp.mesoform.com"
+    restart: always
+    mem_limit: 128m
+    network_mode: bridge
+    command: /usr/sbin/squid3 -f /etc/squid-gcp-proxy/squid.conf
+    environment:
+      - ZABBIX_SERVER=zabbix-server.inst.gaz.gb-home.cns.gorillass.co.uk
+      - SVC_DISCOVERY=consul.svc.gaz.gb-home.cns.gorillass.co.uk:8500
+      - CHANGE_ME=3
