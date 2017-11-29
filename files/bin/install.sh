@@ -2,5 +2,9 @@
 
 # Alpine package update
 apt update \
-    && apt-get install -y  \
-        squid3
+    && apt-get install -qqy  \
+        squid3 \
+        procps \
+        vim \
+        man \
+        curl

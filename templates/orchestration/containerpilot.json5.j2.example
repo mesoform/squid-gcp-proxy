@@ -1,5 +1,5 @@
 {
-  consul: 'localhost:8500',
+  consul: {% if consul_as_agent %}'localhost'{% else %}'{{ svc_discovery }}'{% endif %},
   logging: {
     level: {% raw %}'{{ .LOG_LEVEL }}'{% endraw %},
     format: {% raw %}'{{ .LOG_FORMAT }}'{% endraw %}
@@ -21,9 +21,7 @@
 {% endif %}
     {
       name: '{{ project_name }}',
-      exec: [
-        "{{ command }}"
-      ],
+      exec: "{{ command }}",
 {% if service_port is defined %}
       port: "{{ service_port }}",
 {% endif %}
@@ -42,14 +40,11 @@
 {% endif %}
 {% endfor %}
       ],
-{% if svc_discovery is defined %}
-      when: {
+      {% if consul_as_agent %}when: {
         source: "consul_agent",
         once: "healthy"
-      }
-{% endif %}
+      }{% endif %}
     },
-{% if event_management is defined %}
     {
       name: "scheduling_status_healthy",
       restarts: "unlimited",
@@ -104,47 +99,31 @@
         once: "shutdown"
       }
     },
-{% endif %}
-    {
+{% if consul_as_agent %}{
       name: "consul_agent",
       restarts: "unlimited",
-{% if svc_discovery is defined %}
       exec: [
         "/usr/local/bin/consul", "agent",
-        "-config-dir=/config",
-        "-data-dir=/tmp",
-        "-rejoin",
-        "-retry-join", "{{ svc_discovery }}",
-        "-retry-max", "10",
-        "-retry-interval", "10s"
+        "-data-dir=/data",
+        "-config-dir=/config"
       ],
-{% else %}
-      exec: [
-        "/usr/local/bin/consul", "agent",
-        "-server",
-        "-dev",
-        "-join",
-        "-bootstrap-expect=1",
-        "localhost"
-      ],
-{% endif %}
-/*      health: {
-        exec: "consul join {{ svc_discovery }}",
+      health: {
+        exec: 'consul join {{ svc_discovery }}',
         interval: 5,
         ttl: 10
       },
-*/
-{% if pre_start is defined %}
+  {% if pre_start is defined %}
       when: {
         source: "pre_start",
         once: "exitSuccess"
       }
-{% else %}
+  {% else %}
       when: {
         source: "platform_integration_setup",
         once: "exitSuccess"
       }
-{% endif %}
+  {% endif %}
     }
+{% endif %}
   ]
 }

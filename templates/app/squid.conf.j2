@@ -2,25 +2,22 @@
 #
 
 ## ACL definitions
-acl  	wdc   			src  		10.71.200.0/22 # HSBC Wakefield Datacentre
-acl  	sy  			src 		10.70.200.0/22  # HSBC South Yorkshire Datacentre
-acl  	to_metadata  		dst 		169.254.169.254 # GCP metadata
-acl  	hkl104403  		src 		130.49.105.150/32 # Cass Server
-acl  	gbl18835		src 		128.162.42.137/32 # DRN Proxy
-acl     gcpfoundation-6320774   src     	"{{ app_config_dir }}/gcpfoundation-6320774-servers.conf"
-acl	liquidity-7491774	src		"{{ app_config_dir }}/liquidity-7491774-servers.conf"
-acl     sourcedata-6320774      src     	"{{ app_config_dir }}/sourcedata-6320774-servers.conf"
+acl  	wdc   			src  		10.71.200.0/22 # GCP subnet 1
+acl  	sy  			src 		10.70.200.0/22  # GCP subnet 2
+acl  	to_metadata  	dst 		169.254.169.254 # GCP metadata
+acl  	fwdproxy		src 		172.17.0.4/32 # FWD Proxy
+acl     gcpfoundation   src     	"{{ app_config_dir }}/gcpfoundation-servers.conf"
 acl  	SSL_ports 		port 		443
 acl  	Safe_ports 		port 		80  # http
 acl  	Safe_ports 		port 		443  # https
 acl  	Safe_ports 		port 		1025-65535 # unregistered ports
 acl  	CONNECT 		method 		CONNECT
-acl  	googledomains 		dstdomain 	"{{ app_config_dir }}/googledomains.conf"
+acl  	googledomains	dstdomain 	"{{ app_config_dir }}/googledomains.conf"
 acl  	googleips 		dst 		"{{ app_config_dir }}/googleips.conf"
 acl  	internet 		dst  		all
 acl  	sy-google  		all-of		sy googledomains
 acl  	wdc-google 		all-of		wdc googledomains
-acl	dstgoogle		any-of 		googleips googledomains
+acl	    dstgoogle		any-of 		googleips googledomains
 acl 	has-xff 		req_header 	X-Forwarded-For ^(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|(\[([0-9a-f]+)?:([0-9a-f:]+)?:([0-9a-f]+|0-9\.]+)?\])) # requests that have X-Forwarded-For header with a value
 
 #
@@ -42,18 +39,15 @@ http_access deny manager
 ##http_access deny to_localhost
 
 ## HSBC permission list
-http_access 		allow 	sy 			dstgoogle
+http_access 		allow 	sy 			    dstgoogle
 http_access 		allow 	wdc 			dstgoogle
-http_access 		allow 	gcpfoundation-6320774	dstgoogle
-http_access 		allow 	liquidity-7491774 	dstgoogle
-http_access 		allow 	sourcedata-6320774 	dstgoogle
-http_access 		allow 	hkl104403 		dstgoogle
-http_access 		allow 	gbl18835 		dstgoogle
+http_access 		allow 	gcpfoundation	dstgoogle
+http_access 		allow 	fwdproxy 		dstgoogle
 http_access 		deny 	to_metadata
 
 ## proxy-to-proxy access control
-#proxy_protocol_access   allow   gbl18835                dstgoogle
-follow_x_forwarded_for  allow   gbl18835                dstgoogle
+proxy_protocol_access   allow   fwdproxy                dstgoogle
+follow_x_forwarded_for  allow   fwdproxy                dstgoogle
 
 ## And finally, explicitly deny all other access to this proxy
 http_access deny all
@@ -81,9 +75,9 @@ logformat squid      %ts.%03tu %6tr %>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
 logformat squid-xff  %ts.%03tu %6tr %{X-Forwarded-For}>h %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
 
 ## If no XFF header, use default format
-access_log stdio:/var/log/squid3/access.log squid !has-xff
+access_log syslog:daemon.info squid !has-xff
 ## If XFF use XFF format
-access_log stdio:/var/log/squid3/access.log squid-xff has-xff
+access_log syslog:daemon.info squid-xff has-xff
 
 ## Debug ACLs
 #debug_options 28,3 11,3 23,3 55,3 73,3

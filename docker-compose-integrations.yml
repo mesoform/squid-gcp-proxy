@@ -12,6 +12,15 @@ version: '2'
 #    mem_limit: 128m
 #    env_file:
 #      - _env
-#    network_mode: bridge
+#    network_mode: none
 #    command: > START_DB
-#
+##    ports:
+##      - 8301/UDP
+##      - 8301/TCP
+##      - 8300/tcp
+##      - 8400
+##      - 8302/UDP
+##      - 8302/TCP
+##      - 8500
+##      - 10050
+##

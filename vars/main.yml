@@ -12,6 +12,17 @@ install_scripts:
 volumes:
   - squid-data # any persistent volumes. Delete if redundant
 service_port: 3128 # main service port of the application which will be published to the service discovery system for downstream clients. Delete if redundant
+ports:
+  - 8301/UDP
+  - 8301/TCP
+  - 8300/tcp
+  - 8400
+  - 8302/UDP
+  - 8302/TCP
+  - 8500
+  - 10050
+dns: 127.0.0.1
+net_mode: none
 build_args:
   - CHANGE_ME=1 # Variables only needed for the container build. Delete if redundant
 container_vars:
