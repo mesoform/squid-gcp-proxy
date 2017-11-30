@@ -15,7 +15,7 @@
       register: submodules_locally
 
     - name: add common roles
-      command: git submodule update --recursive
+      shell: git submodule init && git submodule update --recursive
       register: submodule_add
       changed_when: "'checked out' in submodule_add.stdout"
       when: submodules_locally.examined == 0
