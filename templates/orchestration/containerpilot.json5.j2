@@ -89,10 +89,17 @@
         ttl: 60,
         timeout: 5
       },
+{% if pre_start is defined %}
       when: {
         source: "pre_start",
         once: "exitSuccess"
       }
+{% else %}
+      when: {
+        source: "platform_integration_setup",
+        once: "exitSuccess"
+      }
+{% endif %}
     },
     {
       name: "post_stop",
@@ -114,7 +121,7 @@
         "-config-dir=/config",
         "-data-dir=/tmp",
         "-rejoin",
-        "-retry-join", "{{ svc_discovery }}",
+        "-retry-join", "{% raw %}{{ .SVC_DISCOVERY }}{% endraw %}",
         "-retry-max", "10",
         "-retry-interval", "10s"
       ],
@@ -123,13 +130,11 @@
         "/usr/local/bin/consul", "agent",
         "-server",
         "-dev",
-        "-join",
-        "-bootstrap-expect=1",
-        "localhost"
+        "-join", "localhost"
       ],
 {% endif %}
 /*      health: {
-        exec: "consul join {{ svc_discovery }}",
+        exec: "consul join {% raw %}{{ .SVC_DISCOVERY }}{% endraw %}",
         interval: 5,
         ttl: 10
       },

@@ -7,9 +7,8 @@ dept: gcp # department/subdomain for the software. E.g. consul.DISCOVERY.mesofor
 os_distro: debian # what flavour of operating system. Current options are alpine and debian
 dns_domain: "{{ project_name }}.{{ dept }}.{{ company_domain }}"
 oaas_domain: svc.ops.mesoform-services.com # if we have a different DNS domain for our operational services. E.g. svc.ops.mesoform-services.com
-#event_management: zabbix-server.inst.gaz.gb-home.cns.gorillass.co.uk # address of server for handling our event management and monitoring. E.g. zabbix-server.svc.ops.mesoform-services.com
-#svc_discovery: consul.svc.gaz.gb-home.cns.gorillass.co.uk:8301 # address of server for service discovery. E.g. consul.svc.ops.mesoform-services.com
-svc_discovery: consul
+event_management: zabbix-server.inst.gaz.gb-home.cns.gorillass.co.uk # address of server for handling our event management and monitoring. E.g. zabbix-server.svc.ops.mesoform-services.com
+svc_discovery: consul # address of server for service discovery. E.g. consul
 consul_as_agent: false # For service discovery, Containerpilot can connect to the Consul API but it is recommended to leave this true and use an agent
 img_maintainer: Gareth Brown <gareth@mesoform.com> # In the format of FIRSTNAME SURNAME <localpart@domainpart>
 img_description: Proxy for forwarding HTTP requests to Google APIs # describe your application
