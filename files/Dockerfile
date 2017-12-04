@@ -5,7 +5,7 @@ LABEL maintainer="Gareth Brown <gareth@mesoform.com>"
 LABEL description="Proxy for forwarding HTTP requests to Google APIs"
 LABEL com.mesoform.baseimage=False
 LABEL com.joyent.autopilotpattern=True
-LABEL com.mesoform.builddate="2017-12-03T19:30:49Z"
+LABEL com.mesoform.builddate="2017-12-04T17:24:01Z"
 LABEL com.mesoform.baseimage.ver="mesoform/concierge-debian-base-image:concierge-0.1.17"
 LABEL com.docker.img.ver="mesoform/concierge-squid-gcp-proxy:0.1.0"
 
@@ -35,5 +35,5 @@ VOLUME [ "squid-data"  ]
 EXPOSE 3128
 
 # The command we pass to Containerpilot to start the application
-RUN chmod ug+x /usr/sbin/squid3
-CMD [ "/usr/sbin/squid3 -f /etc/squid-gcp-proxy/squid.conf" ]
+RUN chmod ug+x /usr/local/bin/alive.sh
+CMD [ "/usr/local/bin/alive.sh" ]

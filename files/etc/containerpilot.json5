@@ -5,20 +5,20 @@
     format: '{{ .LOG_FORMAT }}'  },
   jobs: [
     {
-      name: "platform_integration_setup",
+      name: "platform-integration-setup",
       exec: "/usr/local/bin/setdomain.sh"
     },
     {
       name: 'squid-gcp-proxy',
       exec: [
-        "/usr/sbin/squid3 -f /etc/squid-gcp-proxy/squid.conf"
+        "/usr/local/bin/alive.sh"
       ],
       port: "3128",
       health: {
-        exec: 'curl http://localhost:3128',
+        exec: 'ping -c1 localhost',
         interval: "5",
-        ttl: "5",
-        timeout: "1",
+        ttl: "30",
+        timeout: "3",
       },
       tags: [
         "squid",
@@ -26,12 +26,12 @@
         "proxy"
       ],
       when: {
-        source: "consul_agent",
-        once: "healthy"
+        source: "platform-integration-setup",
+        once: "exitSuccess"
       }
     },
     {
-      name: "scheduling_status_healthy",
+      name: "scheduling-status-healthy",
       restarts: "unlimited",
       exec: ["zabbix_sender",
         "-c", "/etc/coprocesses/zabbix/zabbix_agentd.conf",
@@ -60,7 +60,7 @@
       }
     },     */
     {
-      name: "zabbix_agent",
+      name: 'zabbix-agent',
       exec: ["/usr/sbin/zabbix_agentd", "-fc", "/etc/coprocesses/zabbix/zabbix_agentd.conf"],
       restarts: "unlimited",
       health: {
@@ -70,12 +70,12 @@
         timeout: 5
       },
       when: {
-        source: "platform_integration_setup",
+        source: "platform-integration-setup",
         once: "exitSuccess"
       }
     },
     {
-      name: "post_stop",
+      name: "post-stop",
       exec: ["zabbix_sender",
              "-c", "/etc/coprocesses/zabbix/zabbix_agentd.conf",
              "--key", "container.state",
@@ -85,7 +85,7 @@
       }
     },
     {
-      name: "consul_agent",
+      name: "consul-agent",
       restarts: "unlimited",
       exec: [
         "/usr/local/bin/consul", "agent",
@@ -103,7 +103,7 @@
       },
 */
       when: {
-        source: "platform_integration_setup",
+        source: "platform-integration-setup",
         once: "exitSuccess"
       }
     }

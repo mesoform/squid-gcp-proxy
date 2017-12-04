@@ -6,15 +6,15 @@
   },
   jobs: [
     {
-      name: "platform_integration_setup",
+      name: "platform-integration-setup",
       exec: "/usr/local/bin/setdomain.sh"
     },
 {% if pre_start is defined %}
     {
-      name: "pre_start",
+      name: "pre-start",
       exec: '{{ pre_start }}',
       when: {
-        source: "platform_integration_setup",
+        source: "platform-integration-setup",
         once: "exitSuccess"
       }
     },
@@ -29,9 +29,9 @@
 {% endif %}
       health: {
         exec: '{{ healthcheck }}',
-        interval: "{{ healthcheck_interval | default(5) }}",
-        ttl: "{{ healthcheck_ttl | default(5) }}",
-        timeout: "{{ healthcheck_timeout | default(1) }}",
+        interval: "{{ healthcheck_interval | default(default_healthcheck_interval) }}",
+        ttl: "{{ healthcheck_ttl | default(default_healthcheck_ttl) }}",
+        timeout: "{{ healthcheck_timeout | default(default_healthcheck_timeout) }}",
       },
       tags: [
 {% for tag in service_tags %}
@@ -42,16 +42,21 @@
 {% endif %}
 {% endfor %}
       ],
-{% if svc_discovery is defined %}
+{% if pre_start is defined %}
       when: {
-        source: "consul_agent",
-        once: "healthy"
+        source: "pre-start",
+        once: "exitSuccess"
+      }
+{% else %}
+      when: {
+        source: "platform-integration-setup",
+        once: "exitSuccess"
       }
 {% endif %}
     },
 {% if event_management is defined %}
     {
-      name: "scheduling_status_healthy",
+      name: "scheduling-status-healthy",
       restarts: "unlimited",
       exec: ["zabbix_sender",
         "-c", "/etc/coprocesses/zabbix/zabbix_agentd.conf",
@@ -80,7 +85,7 @@
       }
     },     */
     {
-      name: "zabbix_agent",
+      name: 'zabbix-agent',
       exec: ["/usr/sbin/zabbix_agentd", "-fc", "/etc/coprocesses/zabbix/zabbix_agentd.conf"],
       restarts: "unlimited",
       health: {
@@ -91,18 +96,18 @@
       },
 {% if pre_start is defined %}
       when: {
-        source: "pre_start",
+        source: "pre-start",
         once: "exitSuccess"
       }
 {% else %}
       when: {
-        source: "platform_integration_setup",
+        source: "platform-integration-setup",
         once: "exitSuccess"
       }
 {% endif %}
     },
     {
-      name: "post_stop",
+      name: "post-stop",
       exec: ["zabbix_sender",
              "-c", "/etc/coprocesses/zabbix/zabbix_agentd.conf",
              "--key", "container.state",
@@ -113,7 +118,7 @@
     },
 {% endif %}
     {
-      name: "consul_agent",
+      name: "consul-agent",
       restarts: "unlimited",
 {% if svc_discovery is defined %}
       exec: [
@@ -141,12 +146,12 @@
 */
 {% if pre_start is defined %}
       when: {
-        source: "pre_start",
+        source: "pre-start",
         once: "exitSuccess"
       }
 {% else %}
       when: {
-        source: "platform_integration_setup",
+        source: "platform-integration-setup",
         once: "exitSuccess"
       }
 {% endif %}
