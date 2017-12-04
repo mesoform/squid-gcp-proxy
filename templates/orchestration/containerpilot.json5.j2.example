@@ -1,35 +1,37 @@
 {
-  consul: {% if consul_as_agent %}'localhost'{% else %}'{{ svc_discovery }}'{% endif %},
+  consul: 'localhost:8500',
   logging: {
     level: {% raw %}'{{ .LOG_LEVEL }}'{% endraw %},
     format: {% raw %}'{{ .LOG_FORMAT }}'{% endraw %}
   },
   jobs: [
     {
-      name: "platform_integration_setup",
+      name: "platform-integration-setup",
       exec: "/usr/local/bin/setdomain.sh"
     },
 {% if pre_start is defined %}
     {
-      name: "pre_start",
+      name: "pre-start",
       exec: '{{ pre_start }}',
       when: {
-        source: "platform_integration_setup",
+        source: "platform-integration-setup",
         once: "exitSuccess"
       }
     },
 {% endif %}
     {
       name: '{{ project_name }}',
-      exec: "{{ command }}",
+      exec: [
+        "{{ command }}"
+      ],
 {% if service_port is defined %}
       port: "{{ service_port }}",
 {% endif %}
       health: {
         exec: '{{ healthcheck }}',
-        interval: "{{ healthcheck_interval | default(5) }}",
-        ttl: "{{ healthcheck_ttl | default(5) }}",
-        timeout: "{{ healthcheck_timeout | default(1) }}",
+        interval: "{{ healthcheck_interval | default(default_healthcheck_interval) }}",
+        ttl: "{{ healthcheck_ttl | default(default_healthcheck_ttl) }}",
+        timeout: "{{ healthcheck_timeout | default(default_healthcheck_timeout) }}",
       },
       tags: [
 {% for tag in service_tags %}
@@ -40,13 +42,21 @@
 {% endif %}
 {% endfor %}
       ],
-      {% if consul_as_agent %}when: {
-        source: "consul_agent",
-        once: "healthy"
-      }{% endif %}
+{% if pre_start is defined %}
+      when: {
+        source: "pre-start",
+        once: "exitSuccess"
+      }
+{% else %}
+      when: {
+        source: "platform-integration-setup",
+        once: "exitSuccess"
+      }
+{% endif %}
     },
+{% if event_management is defined %}
     {
-      name: "scheduling_status_healthy",
+      name: "scheduling-status-healthy",
       restarts: "unlimited",
       exec: ["zabbix_sender",
         "-c", "/etc/coprocesses/zabbix/zabbix_agentd.conf",
@@ -75,7 +85,7 @@
       }
     },     */
     {
-      name: "zabbix_agent",
+      name: 'zabbix-agent',
       exec: ["/usr/sbin/zabbix_agentd", "-fc", "/etc/coprocesses/zabbix/zabbix_agentd.conf"],
       restarts: "unlimited",
       health: {
@@ -84,13 +94,20 @@
         ttl: 60,
         timeout: 5
       },
+{% if pre_start is defined %}
       when: {
-        source: "pre_start",
+        source: "pre-start",
         once: "exitSuccess"
       }
+{% else %}
+      when: {
+        source: "platform-integration-setup",
+        once: "exitSuccess"
+      }
+{% endif %}
     },
     {
-      name: "post_stop",
+      name: "post-stop",
       exec: ["zabbix_sender",
              "-c", "/etc/coprocesses/zabbix/zabbix_agentd.conf",
              "--key", "container.state",
@@ -99,31 +116,45 @@
         once: "shutdown"
       }
     },
-{% if consul_as_agent %}{
-      name: "consul_agent",
+{% endif %}
+    {
+      name: "consul-agent",
       restarts: "unlimited",
+{% if svc_discovery is defined %}
       exec: [
         "/usr/local/bin/consul", "agent",
-        "-data-dir=/data",
-        "-config-dir=/config"
+        "-config-dir=/config",
+        "-data-dir=/tmp",
+        "-rejoin",
+        "-retry-join", "{% raw %}{{ .SVC_DISCOVERY }}{% endraw %}",
+        "-retry-max", "10",
+        "-retry-interval", "10s"
       ],
-      health: {
-        exec: 'consul join {{ svc_discovery }}',
+{% else %}
+      exec: [
+        "/usr/local/bin/consul", "agent",
+        "-server",
+        "-dev",
+        "-join", "localhost"
+      ],
+{% endif %}
+/*      health: {
+        exec: "consul join {% raw %}{{ .SVC_DISCOVERY }}{% endraw %}",
         interval: 5,
         ttl: 10
       },
-  {% if pre_start is defined %}
+*/
+{% if pre_start is defined %}
       when: {
-        source: "pre_start",
+        source: "pre-start",
         once: "exitSuccess"
       }
-  {% else %}
+{% else %}
       when: {
-        source: "platform_integration_setup",
+        source: "platform-integration-setup",
         once: "exitSuccess"
       }
-  {% endif %}
-    }
 {% endif %}
+    }
   ]
 }
