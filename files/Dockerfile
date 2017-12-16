@@ -1,12 +1,12 @@
-FROM mesoform/concierge-debian-base-image:concierge-0.1.17
+FROM mesoform/concierge-debian-base-image:devtest
 
 # Add some labels
 LABEL maintainer="Gareth Brown <gareth@mesoform.com>"
 LABEL description="Proxy for forwarding HTTP requests to Google APIs"
 LABEL com.mesoform.baseimage=False
 LABEL com.joyent.autopilotpattern=True
-LABEL com.mesoform.builddate="2017-12-04T22:47:27Z"
-LABEL com.mesoform.baseimage.ver="mesoform/concierge-debian-base-image:concierge-0.1.17"
+LABEL com.mesoform.builddate="2017-12-16T16:38:47Z"
+LABEL com.mesoform.baseimage.ver="mesoform/concierge-debian-base-image:devtest"
 LABEL com.docker.img.ver="mesoform/concierge-squid-gcp-proxy:0.1.0"
 
 # Set some environment variables
@@ -33,7 +33,3 @@ VOLUME [ "squid-data"  ]
 
 # Expose primary service port
 EXPOSE 3128
-
-# The command we pass to Containerpilot to start the application
-RUN chmod ug+x /usr/local/bin/alive.sh
-CMD [ "/usr/local/bin/alive.sh" ]

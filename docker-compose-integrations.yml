@@ -1,7 +1,7 @@
-
-## This is a compose file to define any integrations for our application. It is concatenated with the main docker-compose.yml file
+## This is a compose file to define any integrations for our Concierge Managed Application.
+## It is concatenated with the main docker-compose.yml file
 ## already created for our application. See tasks/start_orchestration.yml
-
+## http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
 
 version: '2.1'
 services:
@@ -30,7 +30,7 @@ services:
     environment:
       - CONSUL=consul
       - SVC_DISCOVERY=consul:8301
-      - ZABBIX_SERVER=zabbix-server.inst.gaz.gb-home.cns.gorillass.co.uk
+      - EM_SERVER=zabbix-server.inst.gaz.gb-home.cns.gorillass.co.uk
     command: >
       /usr/local/bin/consul agent -server
         -bootstrap-expect 1

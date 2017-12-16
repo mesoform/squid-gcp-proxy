@@ -46,7 +46,7 @@ http_access 		allow 	fwdproxy 		dstgoogle
 http_access 		deny 	to_metadata
 
 ## proxy-to-proxy access control
-proxy_protocol_access   allow   fwdproxy                dstgoogle
+#proxy_protocol_access   allow   fwdproxy                dstgoogle
 follow_x_forwarded_for  allow   fwdproxy                dstgoogle
 
 ## And finally, explicitly deny all other access to this proxy
