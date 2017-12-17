@@ -4,6 +4,7 @@
 apt update \
     && apt-get install -qqy  \
         squid3 \
+        squidclient \
         procps \
         vim \
         man \

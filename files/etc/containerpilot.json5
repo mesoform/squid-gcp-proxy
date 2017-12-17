@@ -15,9 +15,10 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
     {
       name: 'squid-gcp-proxy',
       exec: '/usr/sbin/squid3 -N -f /etc/squid-gcp-proxy/squid.conf',
+      restarts: '3',
       port: '3128',
       health: {
-        exec: 'ping -c1 localhost',
+        exec: 'squidclient -g 1',
         interval: '5',
         ttl: '30',
         timeout: '3',

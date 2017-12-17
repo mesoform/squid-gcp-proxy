@@ -2,11 +2,11 @@
 #
 
 ## ACL definitions
-acl  	wdc   			src  		10.0.1.0/22 # GCP subnet 1
-acl  	sy  			src 		10.0.2.0/22  # GCP subnet 2
+acl  	gcp   			src  		10.0.1.0/22 # internal GCE subnet
+acl  	dockertest		src 		172.19.0.0/16  # Docker overlay network
 acl  	to_metadata  	dst 		169.254.169.254 # GCP metadata
-acl  	fwdproxy		src 		172.17.0.4/32 # FWD Proxy
-acl     gcpfoundation   src     	"{{ app_config_dir }}/gcpfoundation-servers.conf"
+acl  	fwdproxy		src 		172.17.0.4/32 # FWD Proxy on different network
+acl     sharedsvcs      src     	"{{ app_config_dir }}/sharedsvc-servers.conf"
 acl  	SSL_ports 		port 		443
 acl  	Safe_ports 		port 		80  # http
 acl  	Safe_ports 		port 		443  # https
@@ -15,13 +15,11 @@ acl  	CONNECT 		method 		CONNECT
 acl  	googledomains	dstdomain 	"{{ app_config_dir }}/googledomains.conf"
 acl  	googleips 		dst 		"{{ app_config_dir }}/googleips.conf"
 acl  	internet 		dst  		all
-acl  	sy-google  		all-of		sy googledomains
-acl  	wdc-google 		all-of		wdc googledomains
-acl	    dstgoogle		any-of 		googleips googledomains
+acl	    dstgoogle		any-of 		googleips googledomains # all google destinations
 acl 	has-xff 		req_header 	X-Forwarded-For ^(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|(\[([0-9a-f]+)?:([0-9a-f:]+)?:([0-9a-f]+|0-9\.]+)?\])) # requests that have X-Forwarded-For header with a value
 
 #
-## Acess Permissions
+## Access Permissions
 #
 ## Deny requests to certain unsafe ports
 http_access deny !Safe_ports
@@ -39,30 +37,28 @@ http_access deny manager
 ##http_access deny to_localhost
 
 ##  permission list
-http_access 		allow 	sy 			    dstgoogle
-http_access 		allow 	wdc 			dstgoogle
-http_access 		allow 	gcpfoundation	dstgoogle
+http_access 		allow 	gcp 			dstgoogle
+http_access 		allow 	sharedsvcs	    dstgoogle
 http_access 		allow 	fwdproxy 		dstgoogle
 http_access 		deny 	to_metadata
 
-## proxy-to-proxy access control
-#proxy_protocol_access   allow   fwdproxy                dstgoogle
-follow_x_forwarded_for  allow   fwdproxy                dstgoogle
 
 ## And finally, explicitly deny all other access to this proxy
 http_access deny all
+
+## Normally Squid port
+http_port {{ service_port }}
 
 ## Configuration for reverse proxying
 ## define backend server(s) to connect to
 #cache_peer      /etc/squid/googledomains.conf          parent    80       0  default originserver proxy-only name=googleapipeer
 ## Access control for another proxy to connect to these server(s)
 #cache_peer_access       googleapipeer   allow   fwdproxy
-
-
-## Normally Squid port
-http_port 3128
+## proxy-to-proxy access control
+#proxy_protocol_access   allow   fwdproxy                dstgoogle
+#follow_x_forwarded_for  allow   fwdproxy                dstgoogle
 ## Same but also insist there being downstream proxy headers like X-Forwarded-For
-#http_port 3128 require-proxy-header
+#http_port {{ service_port }} require-proxy-header
 
 #
 ## LOGGING
@@ -85,12 +81,6 @@ access_log syslog:daemon.info squid-xff has-xff
 ## don't cache
 cache deny all
 
-## Make squid invisible
-#via off
-#forwarded_for transparent
-
-## Add a disk cache directory.
-#cache_dir ufs /var/spool/squid 100 16 256
 
 ## Coredumps in the first cache dir
 coredump_dir /var/spool/squid
