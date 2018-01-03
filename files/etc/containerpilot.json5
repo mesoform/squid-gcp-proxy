@@ -10,7 +10,7 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
   jobs: [
     {
       name: 'platform-integration-setup',
-      exec: '/usr/local/bin/platform_integration_setup.sh'
+      exec: '/usr/local/bin/platform_integration.sh setup'
     },
     {
       name: 'squid-gcp-proxy',
@@ -19,7 +19,7 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
       port: '3128',
       health: {
         exec: 'squidclient -g 1',
-        interval: '5',
+        interval: '10',
         ttl: '30',
         timeout: '3',
       },
@@ -35,13 +35,13 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
     },
     {
       name: 'scheduling-status-healthy',
-      restarts: 'unlimited',
       exec: ['zabbix_sender',
         '-c', '/etc/coprocesses/zabbix/zabbix_agentd.conf',
         '--key', 'container.state',
         '--value', '1'],
       when: {
-        interval: '10s',
+        source: 'squid-gcp-proxy',
+        each: 'healthy'
       }
     },
 /*  ToDo: sending state=0 when main service is unhealthy
@@ -50,16 +50,13 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
     running will mean docker scale will be using incorrect deployment.state value
     {
       name: 'scheduling_status_unhealthy',
-      restarts: 'unlimited',
       exec: ['zabbix_sender',
         '-c', '/etc/coprocesses/zabbix/zabbix_agentd.conf',
         '--key', 'container.state',
         '--value', '0'],
       when: {
         source: 'squid-gcp-proxy',
-        once: 'unhealthy',
-        interval: '10s',
-        timeout: '3s'
+        each: 'unhealthy'
       }
     },     */
     {
@@ -92,9 +89,8 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
       restarts: 'unlimited',
       exec: [
         '/usr/local/bin/consul', 'agent',
-        '-config-dir=/config',
-        '-disable-host-node-id',
-        '-data-dir=/tmp',
+        '-config-dir=/etc/coprocesses/consul',
+        '-data-dir=/var/lib/consul',
         '-rejoin',
         '-retry-join', '{{ .SVC_DISCOVERY }}',
         '-retry-max', '10',
@@ -106,10 +102,6 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
         ttl: 10
       },
 */
-      when: {
-        source: 'platform-integration-setup',
-        once: 'exitSuccess'
-      }
     }
   ]
 }

@@ -9,3 +9,8 @@ apt update \
         vim \
         man \
         curl
+
+useradd -c "User for running Squid proxy" -M squid
+# Redirect logs to stdout for the container
+mkdir /var/log/squid-gcp-proxy
+chown squid /var/log/squid-gcp-proxy
