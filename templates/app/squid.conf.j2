@@ -67,7 +67,7 @@ http_port {{ service_port }}
 
 logfile_rotate 0
 
-cache_log syslog:{{ log_level | lower }}
+cache_log syslog
 
 ## default logformat
 logformat squid      %ts.%03tu %6tr %>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
