@@ -65,7 +65,9 @@ http_port {{ service_port }}
 ## LOGGING
 #
 
-cache_log /var/log/squid-gcp-proxy/cache.log
+logfile_rotate 0
+
+cache_log syslog:{{ log_level | lower }}
 
 ## default logformat
 logformat squid      %ts.%03tu %6tr %>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
@@ -74,9 +76,9 @@ logformat squid      %ts.%03tu %6tr %>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
 logformat squid-xff  %ts.%03tu %6tr %{X-Forwarded-For}>h %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
 
 ## If no XFF header, use default format
-access_log stdio:/var/log/squid-gcp-proxy/access.log squid !has-xff
+access_log syslog:{{ log_level | lower }} squid !has-xff
 ## If XFF use XFF format
-access_log stdio:/var/log/squid-gcp-proxy/access.log squid-xff has-xff
+access_log syslog:{{ log_level | lower }} squid-xff has-xff
 
 ## Debug ACLs
 #debug_options 28,3 11,3 23,3 55,3 73,3

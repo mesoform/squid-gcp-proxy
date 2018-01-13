@@ -5,34 +5,59 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
 {
   consul: 'localhost:8500',
   logging: {
-    level: '{{ .LOG_LEVEL }}',
-    format: '{{ .LOG_FORMAT }}'  },
+    level: {% raw %}'{{ .LOG_LEVEL }}'{% endraw %},
+    format: {% raw %}'{{ .LOG_FORMAT }}'{% endraw %}
+  },
   jobs: [
     {
       name: 'platform-integration-setup',
       exec: '/usr/local/bin/platform_integration.sh setup'
     },
+{% if pre_start is defined %}
     {
-      name: 'squid-gcp-proxy',
-      exec: '/usr/sbin/squid3 -N -f /etc/squid-gcp-proxy/squid.conf',
-      restarts: '3',
-      port: '3128',
-      health: {
-        exec: 'squidclient -g 1',
-        interval: '10',
-        ttl: '30',
-        timeout: '3',
-      },
-      tags: [
-        'squid',
-        'gcp',
-        'proxy'
-      ],
+      name: 'pre-start',
+      exec: '{{ pre_start }}',
       when: {
         source: 'platform-integration-setup',
         once: 'exitSuccess'
       }
     },
+{% endif %}
+    {
+      name: '{{ project_name }}',
+      exec: '{{ command }}',
+      restarts: '{{ app_restarts | default(default_app_restarts) }}',
+{% if service_port is defined %}
+      port: '{{ service_port }}',
+{% endif %}
+      health: {
+        exec: '{{ healthcheck }}',
+        interval: '{{ healthcheck_interval | default(default_healthcheck_interval) }}',
+        ttl: '{{ healthcheck_ttl | default(default_healthcheck_ttl) }}',
+        timeout: '{{ healthcheck_timeout | default(default_healthcheck_timeout) }}',
+      },
+      tags: [
+{% for tag in service_tags %}
+{% if not loop.last %}
+        '{{ tag }}',
+{% else %}
+        '{{ tag }}'
+{% endif %}
+{% endfor %}
+      ],
+{% if pre_start is defined %}
+      when: {
+        source: 'pre-start',
+        once: 'exitSuccess'
+      }
+{% else %}
+      when: {
+        source: 'platform-integration-setup',
+        once: 'exitSuccess'
+      }
+{% endif %}
+    },
+{% if event_management is defined %}
     {
       name: 'scheduling-status-healthy',
       exec: ['zabbix_sender',
@@ -40,7 +65,7 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
         '--key', 'container.state',
         '--value', '1'],
       when: {
-        source: 'squid-gcp-proxy',
+        source: '{{ project_name }}',
         each: 'healthy'
       }
     },
@@ -55,24 +80,31 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
         '--key', 'container.state',
         '--value', '0'],
       when: {
-        source: 'squid-gcp-proxy',
+        source: '{{ project_name }}',
         each: 'unhealthy'
       }
     },     */
     {
       name: 'zabbix-agent',
       exec: ['/usr/sbin/zabbix_agentd', '-fc', '/etc/coprocesses/zabbix/zabbix_agentd.conf'],
-      restarts: 'unlimited',
+      restarts: '{{ coprocess_restarts | default(default_coprocess_restarts) }}',
       health: {
         exec: 'zabbix_agentd -t agent.ping',
         interval: 30,
         ttl: 60,
         timeout: 5
       },
+{% if pre_start is defined %}
+      when: {
+        source: 'pre-start',
+        once: 'exitSuccess'
+      }
+{% else %}
       when: {
         source: 'platform-integration-setup',
         once: 'exitSuccess'
       }
+{% endif %}
     },
     {
       name: 'post-stop',
@@ -84,20 +116,30 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
         once: 'shutdown'
       }
     },
+{% endif %}
     {
       name: 'consul-agent',
-      restarts: 'unlimited',
+      restarts: '{{ coprocess_restarts | default(default_coprocess_restarts) }}',
+{% if svc_discovery is defined %}
       exec: [
         '/usr/local/bin/consul', 'agent',
         '-config-dir=/etc/coprocesses/consul',
         '-data-dir=/var/lib/consul',
         '-rejoin',
-        '-retry-join', '{{ .SVC_DISCOVERY }}',
+        '-retry-join', '{% raw %}{{ .SVC_DISCOVERY }}{% endraw %}',
         '-retry-max', '10',
         '-retry-interval', '10s'
       ],
+{% else %}
+      exec: [
+        '/usr/local/bin/consul', 'agent',
+        '-server',
+        '-dev',
+        '-join', 'localhost'
+      ],
+{% endif %}
 /*      health: {
-        exec: 'consul join {{ .SVC_DISCOVERY }}',
+        exec: 'consul join {% raw %}{{ .SVC_DISCOVERY }}{% endraw %}',
         interval: 5,
         ttl: 10
       },
@@ -106,7 +148,7 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
     {
         name: 'syslog',
         exec: '/sbin/syslogd -n -O /dev/stdout',
-        restarts: 'unlimited'
+        restarts: '{{ coprocess_restarts | default(default_coprocess_restarts) }}'
     }
   ]
 }
