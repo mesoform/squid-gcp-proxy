@@ -5,7 +5,7 @@ service_tags:
   - proxy
 img_ver: 0.1.0 # current version of your Docker image. REQUIRED
 base_img_ver: devtest
-healthcheck: squidclient -g 1 #'curl http://localhost:{{ service_port }}' # the command which can be used to make sure the application is running correctly. REQUIRED
+healthcheck: squidclient -g 1 http://www.google.co.uk/? # the command which can be used to make sure the application is running correctly. REQUIRED
 app_config_dir: /etc/{{ project_name }}
 command: /usr/sbin/squid3 -N -f {{ app_config_dir }}/squid.conf # the command to start the application. REQUIRED
 install_scripts:

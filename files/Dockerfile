@@ -5,7 +5,7 @@ LABEL maintainer="Gareth Brown <gareth@mesoform.com>"
 LABEL description="Proxy for forwarding HTTP requests to Google APIs"
 LABEL com.mesoform.baseimage=False
 LABEL com.joyent.autopilotpattern=True
-LABEL com.mesoform.builddate="2018-01-13T20:02:39Z"
+LABEL com.mesoform.builddate="2018-01-14T15:29:22Z"
 LABEL com.mesoform.baseimage.ver="mesoform/concierge-debian-base-image:devtest"
 LABEL com.docker.img.ver="mesoform/concierge-squid-gcp-proxy:0.1.0"
 
@@ -39,4 +39,4 @@ HEALTHCHECK \
     --interval=10s \
     --timeout=3s \
     --retries=4 \
-    CMD squidclient -g 1
+    CMD squidclient -g 1 http://www.google.co.uk/?

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-# Alpine package update
+# Install squid, required packages and syslog so we can log to stdout
 apt update \
     && apt-get install -qqy  \
         squid3 \
@@ -12,3 +12,6 @@ apt update \
         busybox-syslogd
 
 useradd -c "User for running Squid proxy" -M squid
+
+# Remove default config directory
+rm -Rf /etc/squid3

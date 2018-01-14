@@ -13,24 +13,35 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
       exec: '/usr/local/bin/platform_integration.sh setup'
     },
     {
-      name: 'squid-gcp-proxy',
-      exec: '/usr/sbin/squid3 -N -f /etc/squid-gcp-proxy/squid.conf',
-      restarts: '3',
-      port: '3128',
-      health: {
-        exec: 'squidclient -g 1',
-        interval: '10',
-        ttl: '30',
-        timeout: '3',
-      },
-      tags: [
-        'squid',
-        'gcp',
-        'proxy'
+      name: 'consul-agent',
+      restarts: 'unlimited',
+      stopTimeout: '5s',
+      exec: [
+        '/usr/local/bin/consul', 'agent',
+        '-config-dir=/etc/coprocesses/consul',
+        '-data-dir=/var/lib/consul',
+        '-rejoin',
+        '-retry-join', '{{ .SVC_DISCOVERY }}',
+        '-retry-max', '10',
+        '-retry-interval', '10s'
       ],
       when: {
         source: 'platform-integration-setup',
         once: 'exitSuccess'
+      },
+      health: {
+        exec: 'curl --fail -Ss http://localhost:8500',
+        interval: 5,
+        ttl: 10,
+        timeout: 2
+      }
+    },
+    {
+      name: 'leave-consul',
+      exec: 'consul leave',
+      when: {
+        source: 'consul-agent',
+        once: 'stopping'
       }
     },
     {
@@ -50,18 +61,24 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
     running will mean docker scale will be using incorrect deployment.state value
     {
       name: 'scheduling_status_unhealthy',
+      restarts: 'unlimited',
       exec: ['zabbix_sender',
         '-c', '/etc/coprocesses/zabbix/zabbix_agentd.conf',
         '--key', 'container.state',
         '--value', '0'],
       when: {
         source: 'squid-gcp-proxy',
-        each: 'unhealthy'
+        once: 'unhealthy',
+        interval: '10s',
+        timeout: '3s'
       }
     },     */
     {
       name: 'zabbix-agent',
-      exec: ['/usr/sbin/zabbix_agentd', '-fc', '/etc/coprocesses/zabbix/zabbix_agentd.conf'],
+      exec: ['/usr/sbin/zabbix_agentd',
+              '-fc',
+              '/etc/coprocesses/zabbix/zabbix_agentd.conf'
+      ],
       restarts: 'unlimited',
       health: {
         exec: 'zabbix_agentd -t agent.ping',
@@ -85,28 +102,36 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
       }
     },
     {
-      name: 'consul-agent',
-      restarts: 'unlimited',
-      exec: [
-        '/usr/local/bin/consul', 'agent',
-        '-config-dir=/etc/coprocesses/consul',
-        '-data-dir=/var/lib/consul',
-        '-rejoin',
-        '-retry-join', '{{ .SVC_DISCOVERY }}',
-        '-retry-max', '10',
-        '-retry-interval', '10s'
-      ],
-/*      health: {
-        exec: 'consul join {{ .SVC_DISCOVERY }}',
-        interval: 5,
-        ttl: 10
+      name: 'squid-gcp-proxy',
+      exec: '{{ .COMMAND }}',
+      restarts: 3,
+      port: '3128',
+      health: {
+        exec: 'squidclient -g 1 http://www.google.co.uk/?',
+        interval: 10,
+        ttl: 30,
+        timeout: 3,
       },
-*/
+      tags: [
+        'squid',
+        'gcp',
+        'proxy'
+      ],
+      consul: {
+        enableTagOverride: true,
+        deregisterCriticalServiceAfter: '10m'
+      },
+      when: {
+        source: 'platform-integration-setup',
+        once: 'exitSuccess'
+      }
     },
     {
         name: 'syslog',
         exec: '/sbin/syslogd -n -O /dev/stdout',
         restarts: 'unlimited'
     }
+  ],
+  watches: [
   ]
 }

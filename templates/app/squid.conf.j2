@@ -41,6 +41,7 @@ http_access 		allow 	gcp 			dstgoogle
 http_access 		allow 	sharedsvcs	    dstgoogle
 http_access 		allow 	fwdproxy 		dstgoogle
 http_access 		allow 	dockertest 		dstgoogle
+http_access         allow   localhost       dstgoogle
 http_access 		deny 	to_metadata
 
 
@@ -67,7 +68,8 @@ http_port {{ service_port }}
 
 logfile_rotate 0
 
-cache_log syslog
+# stderr because squid can't write to stdout and cache_log needs a file
+cache_log stderr
 
 ## default logformat
 logformat squid      %ts.%03tu %6tr %>a %Ss/%03>Hs %<st %rm %ru %[un %Sh/%<a %mt
@@ -92,6 +94,9 @@ cache_effective_user squid
 
 ## Coredumps in the first cache dir
 coredump_dir /var/spool/squid3
+
+## Disable EUI/MAC lookups
+eui_lookup off
 
 #
 ## Add any of your own refresh_pattern entries above these.
