@@ -127,11 +127,23 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
       }
     },
     {
+      name: 'on-change-apache-fwdproxy',
+      exec: '/usr/local/bin/reload',
+      when: {
+        source: 'watch.apache-fwdproxy',
+        each: 'changed'
+      }
+    },
+    {
         name: 'syslog',
         exec: '/sbin/syslogd -n -O /dev/stdout',
         restarts: 'unlimited'
     }
   ],
   watches: [
+    {
+    name: 'apache-fwdproxy',
+      interval: 3
+    },
   ]
 }

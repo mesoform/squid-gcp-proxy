@@ -8,6 +8,7 @@ base_img_ver: devtest
 healthcheck: squidclient -g 1 http://www.google.co.uk/? # the command which can be used to make sure the application is running correctly. REQUIRED
 app_config_dir: /etc/{{ project_name }}
 command: /usr/sbin/squid3 -N -f {{ app_config_dir }}/squid.conf # the command to start the application. REQUIRED
+reload: /usr/local/bin/reload
 install_scripts:
   - /usr/local/bin/install.sh # install script found in files/bin. Use multiple scripts as a list for different image layers. REQUIRED
 volumes:
@@ -20,7 +21,8 @@ container_vars:
 env_vars:
   - ENV_VAR=TRUE # environment variables you want passed to the container at runtime. Delete if redundant
 log_level: DEBUG
-
+downstreams:
+  - apache-fwdproxy
 
 
 gcpfoundation_servers:

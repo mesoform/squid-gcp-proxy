@@ -5,7 +5,6 @@
 acl  	gcp   			src  		10.0.1.0/22 # internal GCE subnet
 acl  	dockertest		src 		172.19.0.0/16  # Docker overlay network
 acl  	to_metadata  	dst 		169.254.169.254 # GCP metadata
-acl  	fwdproxy		src 		172.17.0.4/32 # FWD Proxy on different network
 acl     sharedsvcs      src     	"{{ app_config_dir }}/sharedsvc-servers.conf"
 acl  	SSL_ports 		port 		443
 acl  	Safe_ports 		port 		80  # http
@@ -17,6 +16,11 @@ acl  	googleips 		dst 		"{{ app_config_dir }}/googleips.conf"
 acl  	internet 		dst  		all
 acl	    dstgoogle		any-of 		googleips googledomains # all google destinations
 acl 	has-xff 		req_header 	X-Forwarded-For ^(([0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|(\[([0-9a-f]+)?:([0-9a-f:]+)?:([0-9a-f]+|0-9\.]+)?\])) # requests that have X-Forwarded-For header with a value
+{% if downstreams is defined %}
+{% for downstream in downstreams %}
+acl  	{{ downstream }}		src 		"{{ app_config_dir }}/{{ downstream }}-servers.conf"
+{% endfor %}
+{% endif %}
 
 #
 ## Access Permissions
@@ -37,11 +41,15 @@ http_access deny manager
 ##http_access deny to_localhost
 
 ##  permission list
-http_access 		allow 	gcp 			dstgoogle
-http_access 		allow 	sharedsvcs	    dstgoogle
-http_access 		allow 	fwdproxy 		dstgoogle
-http_access 		allow 	dockertest 		dstgoogle
-http_access         allow   localhost       dstgoogle
+http_access 		allow 	gcp                 dstgoogle
+http_access 		allow 	sharedsvcs          dstgoogle
+http_access 		allow 	dockertest          dstgoogle
+http_access         allow   localhost           dstgoogle
+{% if downstreams is defined %}
+{% for downstream in downstreams %}
+http_access         allow   {{ downstream }}	dstgoogle
+{% endfor %}
+{% endif %}
 http_access 		deny 	to_metadata
 
 

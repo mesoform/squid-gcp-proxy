@@ -173,6 +173,18 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
     },
 {% endfor %}
 {% endif %}
+{% if downstreams is defined %}
+{% for downstream in downstreams %}
+    {
+      name: 'on-change-{{ downstream }}',
+      exec: '{{ reload }}',
+      when: {
+        source: 'watch.{{ downstream }}',
+        each: 'changed'
+      }
+    },
+{% endfor %}
+{% endif %}
     {
         name: 'syslog',
         exec: '/sbin/syslogd -n -O /dev/stdout',
@@ -184,6 +196,14 @@ http://www.mesoform.com/blog-listing/info/the-concierge-paradigm
 {% for upstream in upstreams %}
     {
     name: '{{ upstream }}',
+      interval: 3
+    },
+{% endfor %}
+{% endif %}
+{% if downstreams is defined %}
+{% for downstream in downstreams %}
+    {
+    name: '{{ downstream }}',
       interval: 3
     },
 {% endfor %}
