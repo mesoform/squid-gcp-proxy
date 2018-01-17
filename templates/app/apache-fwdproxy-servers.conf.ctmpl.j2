@@ -1,5 +1,5 @@
 # The 'raw' instruction is used when processing .j2 file as a means to not try
 # and interpolate the consul-template functions and variable
 {% raw %}{{ range service "apache-fwdproxy" }}
-{{.Address}}
+{{.Address}}/32
 {{end}}{% endraw %}
