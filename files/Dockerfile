@@ -5,7 +5,7 @@ LABEL maintainer="Gareth Brown <gareth@mesoform.com>"
 LABEL description="Proxy for forwarding HTTP requests to Google APIs"
 LABEL com.mesoform.baseimage=False
 LABEL com.joyent.autopilotpattern=True
-LABEL com.mesoform.builddate="2018-01-16T23:27:15Z"
+LABEL com.mesoform.builddate="2018-01-17T09:39:39Z"
 LABEL com.mesoform.baseimage.ver="mesoform/concierge-debian-base-image:devtest"
 LABEL com.docker.img.ver="mesoform/concierge-squid-gcp-proxy:0.1.0"
 
