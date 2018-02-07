@@ -24,9 +24,5 @@ services:
     ports:
       - 3128
       - 10050
-    environment:
-      - EM_SERVER=zabbix-server.inst.gaz.gb-home.cns.gorillass.co.uk
-      - SVC_DISCOVERY=consul:8301
-      - ENV_VAR=TRUE
     ## uncomment to test your application start without containerpilot
     #entrypoint: /usr/sbin/squid3 -N -f /etc/squid-gcp-proxy/squid.conf

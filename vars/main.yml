@@ -33,7 +33,7 @@ command: /usr/sbin/squid3 -N -f {{ app_config_dir }}/squid.conf # the command to
 healthcheck: squidclient -g 1 http://www.google.co.uk/? # the command which can be used to make sure the application is running correctly. REQUIRED
 reload: /usr/local/bin/reload
 volumes:
-  - squid-data # any persistent volumes. Delete if redundant
+  - /squid-data # any persistent volumes. Delete if redundant
 service_port: 3128 # main service port of the application which will be published to the service discovery system for downstream clients. Delete if redundant
 log_level: DEBUG
 service_tags:
