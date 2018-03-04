@@ -5,7 +5,7 @@
 version: '2.1'
 
 services:
-  app:
+  squid-gcp-proxy:
     image: "mesoform/concierge-squid-gcp-proxy:0.1.0"
     domainname: "squid-gcp-proxy.gcp.mesoform.com"
     dns_search:
@@ -19,6 +19,8 @@ services:
     ## sends network_mode=default by default. The uncommenting of this line is handled
     ## in the Ansible code but can obviously be uncommented personally for manual interaction
     # network_mode: bridge
+    # Triton also doesn't handle domain_name, so we fix this by adding a
+    # DNS_DOMAIN=squid-gcp-proxy.gcp.mesoform.com environment variable below
     depends_on:
       - consul
     ports:
